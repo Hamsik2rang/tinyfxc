@@ -165,7 +165,7 @@ int main(int argc, char** argv)
 
 	char** argBuffer = new char* [argc] {};
 
-	printf("Hello! this is test compiler.\n");
+	printf("Hello! this is tiny fxc.\n");
 	printf("yonr arguments is :\n");
 	for (int i = 0; i < argc; i++)
 	{
