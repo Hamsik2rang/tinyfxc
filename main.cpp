@@ -82,12 +82,14 @@ public:
 	{
 		bool hasFound = false;
 
+		char relativeFileName[2048]{};
+		sprintf_s(relativeFileName, "./%s", pFileName);
 		for (const auto& path : _includePaths)
 		{
-			char fullPath[2048];
-			sprintf_s(fullPath, "%s%s", path, pFileName);
+			char fullPath[2048]{};
+			sprintf_s(fullPath, "%s%s", path, relativeFileName);
 			fprintf(stdout, "shader compile include path: %s\n", fullPath);
-			
+
 			FILE* fp;
 			fopen_s(&fp, fullPath, "rb");
 			if (nullptr == fp)
@@ -106,6 +108,26 @@ public:
 			*ppData = buf;
 
 			fclose(fp);
+
+			fprintf(stdout, "shader compile include path: %s is finished.\n", fullPath);
+
+			size_t fullPathLen = strlen(fullPath);
+			size_t copySize = 0;
+			for (int i = fullPathLen; i >= 0; i--)
+			{
+				if (fullPath[i] == '\\' || fullPath[i] == '/')
+				{
+					fullPath[i + 1] = '\0';
+					copySize = i + 1;
+					break;
+				}
+			}
+
+			char* curPath = new char[2048] {};
+
+			memcpy(curPath, fullPath, copySize);
+			fprintf(stdout, "add new include path: %s\n\n", curPath);
+			_includePaths.push_back(curPath);
 
 			break;
 		}
@@ -138,7 +160,7 @@ bool CompareArgument(const char* argument, const char* syntax, bool* hasLineSpac
 		return 0;
 	}
 
-	for (size_t  i = 0; i < syntaxLen; i++)
+	for (size_t i = 0; i < syntaxLen; i++)
 	{
 		if (argument[i] != syntax[i])
 		{
@@ -181,7 +203,6 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-
 	const char* inputPath = nullptr;
 	const char* outputPath = nullptr;
 	const char* shaderProfile = nullptr;
@@ -209,7 +230,24 @@ int main(int argc, char** argv)
 				inputPath = absoluteInputPath;
 			}
 
- 			break;
+			size_t inputPathLen = strlen(inputPath);
+			size_t copySize = 0;
+			for (int j = inputPathLen; j >= 0; j--)
+			{
+				if (inputPath[j] == '/' || inputPath[j] == '\\')
+				{
+					copySize = j + 1;
+					break;
+				}
+			}
+
+			char* defaultIncludeDirectory = new char[2048] {};
+			memcpy(defaultIncludeDirectory, inputPath, copySize);
+			defaultIncludeDirectory[copySize] = '\0';
+
+			includePaths.push_back(defaultIncludeDirectory);
+
+			break;
 		}
 
 		bool hasLineSpacing = false;
@@ -479,15 +517,15 @@ int main(int argc, char** argv)
 	fp = nullptr;
 
 	hr = D3DCompile(
-		hlslCode, 
-		hlslCodeSize, 
-		NULL, 
+		hlslCode,
+		hlslCodeSize,
+		NULL,
 		macros.data(),
 		includeHandler,
-		entryName, 
-		shaderProfile, 
-		flags, 
-		0, 
+		entryName,
+		shaderProfile,
+		flags,
+		0,
 		&compiledShader,
 		&compilationErrors
 	);
