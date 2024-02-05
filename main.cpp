@@ -82,6 +82,8 @@ public:
 	{
 		bool hasFound = false;
 
+		fprintf(stdout, "current include target: %s", pFileName);
+
 		char relativeFileName[2048]{};
 		sprintf_s(relativeFileName, "./%s", pFileName);
 		for (const auto& path : _includePaths)
@@ -214,353 +216,360 @@ int main(int argc, char** argv)
 	UINT flags = 0;
 	char absoluteInputPath[2048]{};
 
-	for (int i = 1; i < argc; i++)
+	try
 	{
-		if (nullptr == argBuffer || nullptr == argBuffer[i])
+		for (int i = 1; i < argc; i++)
 		{
-			continue;
-		}
-
-		if (i == argc - 1)
-		{
-			inputPath = argBuffer[i];
-			if (argBuffer[i][0] == '.')
+			if (nullptr == argBuffer || nullptr == argBuffer[i])
 			{
-				GetFullPathNameA(inputPath, 2048, absoluteInputPath, NULL);
-				inputPath = absoluteInputPath;
+				continue;
 			}
 
-			size_t inputPathLen = strlen(inputPath);
-			size_t copySize = 0;
-			for (int j = inputPathLen; j >= 0; j--)
+			if (i == argc - 1)
 			{
-				if (inputPath[j] == '/' || inputPath[j] == '\\')
+				inputPath = argBuffer[i];
+				if (argBuffer[i][0] == '.')
 				{
-					copySize = j + 1;
-					break;
-				}
-			}
-
-			char* defaultIncludeDirectory = new char[2048] {};
-			memcpy(defaultIncludeDirectory, inputPath, copySize);
-			defaultIncludeDirectory[copySize] = '\0';
-
-			includePaths.push_back(defaultIncludeDirectory);
-
-			break;
-		}
-
-		bool hasLineSpacing = false;
-
-		if (CompareArgument(argBuffer[i], "/ZI", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_DEBUG;
-		}
-		else if (CompareArgument(argBuffer[i], "/Vd", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_SKIP_VALIDATION;
-		}
-		else if (CompareArgument(argBuffer[i], "/Od", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-		}
-		else if (CompareArgument(argBuffer[i], "/Zpr", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
-		}
-		else if (CompareArgument(argBuffer[i], "/Zpc", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR;
-		}
-		else if (CompareArgument(argBuffer[i], "/Gpp", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_PARTIAL_PRECISION;
-		}
-		else if (CompareArgument(argBuffer[i], "/Op", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_NO_PRESHADER;
-		}
-		else if (CompareArgument(argBuffer[i], "/Gfa", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_AVOID_FLOW_CONTROL;
-		}
-		else if (CompareArgument(argBuffer[i], "/Ges", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_ENABLE_STRICTNESS;
-		}
-		else if (CompareArgument(argBuffer[i], "/Gis", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_IEEE_STRICTNESS;
-		}
-		else if (CompareArgument(argBuffer[i], "/Gec", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
-		}
-		else if (CompareArgument(argBuffer[i], "/O0", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_OPTIMIZATION_LEVEL0;
-		}
-		else if (CompareArgument(argBuffer[i], "/O1", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_OPTIMIZATION_LEVEL1;
-		}
-		else if (CompareArgument(argBuffer[i], "/O2", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_OPTIMIZATION_LEVEL2;
-		}
-		else if (CompareArgument(argBuffer[i], "/O3", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-		}
-		else if (CompareArgument(argBuffer[i], "/WX", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-		}
-		else if (CompareArgument(argBuffer[i], "/Zss", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_DEBUG_NAME_FOR_SOURCE;
-		}
-		else if (CompareArgument(argBuffer[i], "/Zsb", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_DEBUG_NAME_FOR_BINARY;
-		}
-		else if (CompareArgument(argBuffer[i], "/res_may_alias", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_RESOURCES_MAY_ALIAS;
-		}
-		else if (CompareArgument(argBuffer[i], "/enable_unbounded_descriptor_tables", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_ENABLE_UNBOUNDED_DESCRIPTOR_TABLES;
-		}
-		else if (CompareArgument(argBuffer[i], "/all_resources_bound", &hasLineSpacing))
-		{
-			flags |= D3DCOMPILE_ALL_RESOURCES_BOUND;
-		}
-		else if (CompareArgument(argBuffer[i], "/D", &hasLineSpacing))
-		{
-			char* defineArgument = NULL;
-			if (hasLineSpacing)
-			{
-				if (i + 1 >= argc || NULL == argBuffer[i + 1])
-				{
-					fprintf(stderr, "you should write Define key and value after /D argument.\n");
-					errorCode = INVALID_SHADER_DEFINE;
-					goto lb_release;
-				}
-				else
-				{
-					defineArgument = argBuffer[i + 1];
+					GetFullPathNameA(inputPath, 2048, absoluteInputPath, NULL);
+					inputPath = absoluteInputPath;
 				}
 
-				i++;
-			}
-			else
-			{
-				defineArgument = &(argBuffer[i][2]);
-			}
-
-			int equalIndex = -1;
-			size_t defineArgumentLen = strlen(defineArgument);
-			for (size_t j = 0; j < defineArgumentLen; j++)
-			{
-				if (defineArgument[j] == '=')
+				size_t inputPathLen = strlen(inputPath);
+				size_t copySize = 0;
+				for (int j = inputPathLen; j >= 0; j--)
 				{
-					equalIndex = j;
-					break;
+					if (inputPath[j] == '/' || inputPath[j] == '\\')
+					{
+						copySize = j + 1;
+						break;
+					}
 				}
+
+				char* defaultIncludeDirectory = new char[2048] {};
+				memcpy(defaultIncludeDirectory, inputPath, copySize);
+				defaultIncludeDirectory[copySize] = '\0';
+
+				includePaths.push_back(defaultIncludeDirectory);
+
+				break;
 			}
 
-			const char* keyArgument = defineArgument;
-			const char* valueArgument = NULL;
+			bool hasLineSpacing = false;
 
-			if (equalIndex == -1)
+			if (CompareArgument(argBuffer[i], "/ZI", &hasLineSpacing) || CompareArgument(argBuffer[i], "/Zi", &hasLineSpacing))
 			{
-				valueArgument = "1";
+				flags |= D3DCOMPILE_DEBUG;
 			}
-			else
+			else if (CompareArgument(argBuffer[i], "/Vd", &hasLineSpacing))
 			{
-				defineArgument[equalIndex] = '\0';
-				valueArgument = &(defineArgument[equalIndex + 1]);
+				flags |= D3DCOMPILE_SKIP_VALIDATION;
 			}
-
-			D3D_SHADER_MACRO macro{};
-
-			macro.Name = keyArgument;
-			macro.Definition = valueArgument;
-			macros.push_back(macro);
-		}
-		else if (CompareArgument(argBuffer[i], "/T", &hasLineSpacing))
-		{
-			if (hasLineSpacing)
+			else if (CompareArgument(argBuffer[i], "/Od", &hasLineSpacing))
 			{
-				if (i + 1 >= argc || nullptr == argBuffer[i + 1])
+				flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+			}
+			else if (CompareArgument(argBuffer[i], "/Zpr", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
+			}
+			else if (CompareArgument(argBuffer[i], "/Zpc", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR;
+			}
+			else if (CompareArgument(argBuffer[i], "/Gpp", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_PARTIAL_PRECISION;
+			}
+			else if (CompareArgument(argBuffer[i], "/Op", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_NO_PRESHADER;
+			}
+			else if (CompareArgument(argBuffer[i], "/Gfa", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_AVOID_FLOW_CONTROL;
+			}
+			else if (CompareArgument(argBuffer[i], "/Ges", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_ENABLE_STRICTNESS;
+			}
+			else if (CompareArgument(argBuffer[i], "/Gis", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_IEEE_STRICTNESS;
+			}
+			else if (CompareArgument(argBuffer[i], "/Gec", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
+			}
+			else if (CompareArgument(argBuffer[i], "/O0", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_OPTIMIZATION_LEVEL0;
+			}
+			else if (CompareArgument(argBuffer[i], "/O1", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_OPTIMIZATION_LEVEL1;
+			}
+			else if (CompareArgument(argBuffer[i], "/O2", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_OPTIMIZATION_LEVEL2;
+			}
+			else if (CompareArgument(argBuffer[i], "/O3", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+			}
+			else if (CompareArgument(argBuffer[i], "/WX", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+			}
+			else if (CompareArgument(argBuffer[i], "/Zss", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_DEBUG_NAME_FOR_SOURCE;
+			}
+			else if (CompareArgument(argBuffer[i], "/Zsb", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_DEBUG_NAME_FOR_BINARY;
+			}
+			else if (CompareArgument(argBuffer[i], "/res_may_alias", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_RESOURCES_MAY_ALIAS;
+			}
+			else if (CompareArgument(argBuffer[i], "/enable_unbounded_descriptor_tables", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_ENABLE_UNBOUNDED_DESCRIPTOR_TABLES;
+			}
+			else if (CompareArgument(argBuffer[i], "/all_resources_bound", &hasLineSpacing))
+			{
+				flags |= D3DCOMPILE_ALL_RESOURCES_BOUND;
+			}
+			else if (CompareArgument(argBuffer[i], "/D", &hasLineSpacing))
+			{
+				char* defineArgument = NULL;
+				if (hasLineSpacing)
 				{
-					fprintf(stderr, "you should write shader profile after /T argument.\n");
-					errorCode = INVALID_SHADER_PROFILE;
-					goto lb_release;
+					if (i + 1 >= argc || NULL == argBuffer[i + 1])
+					{
+						fprintf(stderr, "you should write Define key and value after /D argument.\n");
+						errorCode = INVALID_SHADER_DEFINE;
+						goto lb_release;
+					}
+					else
+					{
+						defineArgument = argBuffer[i + 1];
+					}
+
+					i++;
 				}
 				else
 				{
-					shaderProfile = argBuffer[i + 1];
+					defineArgument = &(argBuffer[i][2]);
 				}
 
-				i++;
-			}
-			else
-			{
-				shaderProfile = &(argBuffer[i][2]);
-			}
-		}
-		else if (CompareArgument(argBuffer[i], "/E", &hasLineSpacing))
-		{
-			if (hasLineSpacing)
-			{
-				if (i + 1 >= argc || nullptr == argBuffer[i + 1])
+				int equalIndex = -1;
+				size_t defineArgumentLen = strlen(defineArgument);
+				for (size_t j = 0; j < defineArgumentLen; j++)
 				{
-					fprintf(stderr, "you should write entry name after /E argument.\n");
-					errorCode = INVALID_ENTRY_NAME;
-					goto lb_release;
+					if (defineArgument[j] == '=')
+					{
+						equalIndex = j;
+						break;
+					}
+				}
+
+				const char* keyArgument = defineArgument;
+				const char* valueArgument = NULL;
+
+				if (equalIndex == -1)
+				{
+					valueArgument = "1";
 				}
 				else
 				{
-					entryName = argBuffer[i + 1];
+					defineArgument[equalIndex] = '\0';
+					valueArgument = &(defineArgument[equalIndex + 1]);
 				}
 
-				i++;
+				D3D_SHADER_MACRO macro{};
+
+				macro.Name = keyArgument;
+				macro.Definition = valueArgument;
+				macros.push_back(macro);
 			}
-			else
+			else if (CompareArgument(argBuffer[i], "/T", &hasLineSpacing))
 			{
-				entryName = &(argBuffer[i][2]);
-			}
-		}
-		else if (CompareArgument(argBuffer[i], "/I", &hasLineSpacing))
-		{
-			char* includePath = nullptr;
-			if (hasLineSpacing)
-			{
-				if (i + 1 >= argc || nullptr == argBuffer[i + 1])
+				if (hasLineSpacing)
 				{
-					fprintf(stderr, "you should write include path after /I argument.\n");
-					errorCode = INVALID_INCLUDE_PATH;
-					goto lb_release;
+					if (i + 1 >= argc || nullptr == argBuffer[i + 1])
+					{
+						fprintf(stderr, "you should write shader profile after /T argument.\n");
+						errorCode = INVALID_SHADER_PROFILE;
+						goto lb_release;
+					}
+					else
+					{
+						shaderProfile = argBuffer[i + 1];
+					}
+
+					i++;
 				}
 				else
 				{
-					includePath = argBuffer[i + 1];
+					shaderProfile = &(argBuffer[i][2]);
 				}
-
-				i++;
 			}
-			else
+			else if (CompareArgument(argBuffer[i], "/E", &hasLineSpacing))
 			{
-				includePath = &(argBuffer[i][2]);
-			}
-			size_t pathLen = strlen(includePath);
-			if (includePath[pathLen - 1] != '/' && includePath[pathLen - 1] != '\\')
-			{
-				includePath[pathLen] = '/';
-				includePath[pathLen + 1] = '\0';
-			}
-
-			includePaths.push_back(includePath);
-		}
-		else if (CompareArgument(argBuffer[i], "/Fo", &hasLineSpacing))
-		{
-			if (hasLineSpacing)
-			{
-				if (i + 1 >= argc || nullptr == argBuffer[i + 1])
+				if (hasLineSpacing)
 				{
-					fprintf(stderr, "you should write output path after /Fo argument.\n");
-					errorCode = INVALID_OUTPUT_PATH;
-					goto lb_release;
+					if (i + 1 >= argc || nullptr == argBuffer[i + 1])
+					{
+						fprintf(stderr, "you should write entry name after /E argument.\n");
+						errorCode = INVALID_ENTRY_NAME;
+						goto lb_release;
+					}
+					else
+					{
+						entryName = argBuffer[i + 1];
+					}
+
+					i++;
 				}
 				else
 				{
-					outputPath = argBuffer[i + 1];
+					entryName = &(argBuffer[i][2]);
+				}
+			}
+			else if (CompareArgument(argBuffer[i], "/I", &hasLineSpacing))
+			{
+				char* includePath = nullptr;
+				if (hasLineSpacing)
+				{
+					if (i + 1 >= argc || nullptr == argBuffer[i + 1])
+					{
+						fprintf(stderr, "you should write include path after /I argument.\n");
+						errorCode = INVALID_INCLUDE_PATH;
+						goto lb_release;
+					}
+					else
+					{
+						includePath = argBuffer[i + 1];
+					}
+
+					i++;
+				}
+				else
+				{
+					includePath = &(argBuffer[i][2]);
+				}
+				size_t pathLen = strlen(includePath);
+				if (includePath[pathLen - 1] != '/' && includePath[pathLen - 1] != '\\')
+				{
+					includePath[pathLen] = '/';
+					includePath[pathLen + 1] = '\0';
 				}
 
-				i++;
+				includePaths.push_back(includePath);
+			}
+			else if (CompareArgument(argBuffer[i], "/Fo", &hasLineSpacing))
+			{
+				if (hasLineSpacing)
+				{
+					if (i + 1 >= argc || nullptr == argBuffer[i + 1])
+					{
+						fprintf(stderr, "you should write output path after /Fo argument.\n");
+						errorCode = INVALID_OUTPUT_PATH;
+						goto lb_release;
+					}
+					else
+					{
+						outputPath = argBuffer[i + 1];
+					}
+
+					i++;
+				}
+				else
+				{
+					outputPath = &(argBuffer[i][3]);
+				}
 			}
 			else
 			{
-				outputPath = &(argBuffer[i][3]);
+				fprintf(stdout, "%s argument is not supported.\n", argBuffer[i]);
+				errorCode = INVALID_ARGUMENT;
+				goto lb_release;
 			}
 		}
-		else
+
+		fopen_s(&fp, inputPath, "rb");
+		if (nullptr == fp)
 		{
-			fprintf(stdout, "%s argument is not supported.\n", argBuffer[i]);
-			errorCode = INVALID_ARGUMENT;
+			fprintf(stderr, "invalid input hlsl file path. you should write input hlsl file path into last argument.\n");
+			fprintf(stderr, "NOTE. your input file path is : %s\n", inputPath);
+			errorCode = INVALID_INPUT_PATH;
 			goto lb_release;
 		}
-	}
 
-	fopen_s(&fp, inputPath, "rb");
-	if (nullptr == fp)
-	{
-		fprintf(stderr, "invalid input hlsl file path. you should write input hlsl file path into last argument.\n");
-		fprintf(stderr, "NOTE. your input file path is : %s\n", inputPath);
-		errorCode = INVALID_INPUT_PATH;
-		goto lb_release;
-	}
+		includeHandler = new IncludeHandler(includePaths);
 
-	includeHandler = new IncludeHandler(includePaths);
+		fseek(fp, 0, SEEK_END);
+		hlslCodeSize = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
 
-	fseek(fp, 0, SEEK_END);
-	hlslCodeSize = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+		hlslCode = new char[hlslCodeSize];
+		fread(hlslCode, 1, hlslCodeSize, fp);
 
-	hlslCode = new char[hlslCodeSize];
-	fread(hlslCode, 1, hlslCodeSize, fp);
+		fclose(fp);
 
-	fclose(fp);
+		fp = nullptr;
 
-	fp = nullptr;
+		hr = D3DCompile(
+			hlslCode,
+			hlslCodeSize,
+			NULL,
+			macros.data(),
+			includeHandler,
+			entryName,
+			shaderProfile,
+			flags,
+			0,
+			&compiledShader,
+			&compilationErrors
+		);
 
-	hr = D3DCompile(
-		hlslCode,
-		hlslCodeSize,
-		NULL,
-		macros.data(),
-		includeHandler,
-		entryName,
-		shaderProfile,
-		flags,
-		0,
-		&compiledShader,
-		&compilationErrors
-	);
-
-	if (FAILED(hr))
-	{
-		if (compilationErrors)
+		if (FAILED(hr))
 		{
-			fprintf(stderr, "Compilation failed with errors: \n\t%s\n", (char*)compilationErrors->GetBufferPointer());
-			compilationErrors->Release();
-		}
-		else
-		{
-			fprintf(stderr, "Compilation failed with HRESULT: 0x%08X\n", hr);
+			if (compilationErrors)
+			{
+				fprintf(stderr, "Compilation failed with errors: \n\t%s\n", (char*)compilationErrors->GetBufferPointer());
+				compilationErrors->Release();
+			}
+			else
+			{
+				fprintf(stderr, "Compilation failed with HRESULT: 0x%08X\n", hr);
+			}
+
+			errorCode = SHADER_COMPILE_FAILED;
+			goto lb_release;
 		}
 
-		errorCode = SHADER_COMPILE_FAILED;
-	}
+		if (nullptr != outputPath)
+		{
+			fopen_s(&fp, outputPath, "wb");
+		}
+		if (nullptr == fp)
+		{
+			fprintf(stderr, "failed to create output file.");
+			errorCode = INVALID_OUTPUT_PATH;
+			goto lb_release;
+		}
 
-	if (nullptr != outputPath)
+		fwrite(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), 1, fp);
+		fclose(fp);
+
+		fprintf(stdout, "compilation success.\n");
+	}
+	catch (...)
 	{
-		fopen_s(&fp, outputPath, "wb");
+		fprintf(stderr, "unknown error occurred.\n");
 	}
-	if (nullptr == fp)
-	{
-		fprintf(stderr, "failed to create output file.");
-		errorCode = INVALID_OUTPUT_PATH;
-		goto lb_release;
-	}
-
-	fwrite(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), 1, fp);
-	fclose(fp);
-
-	fprintf(stdout, "compilation success.\n");
-
 lb_release:
 	delete includeHandler;
 	for (int i = 0; i < argc; i++)
